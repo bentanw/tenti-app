@@ -172,13 +172,16 @@ async function fetchPublic(url: URL, redirectsLeft = 5): Promise<Response> {
 }
 
 async function downloadWithYtDlp(url: string, workdir: string): Promise<string> {
-  if (!(await hasBinary('yt-dlp'))) {
+  const ytDlp = process.env.VERCEL ? path.join(process.cwd(), 'bin', 'yt-dlp') : 'yt-dlp'
+  if (!(await hasBinary(ytDlp))) {
     throw new Error(
-      'Transcribing YouTube/TikTok/Instagram links needs yt-dlp. Install it with `brew install yt-dlp`, or upload the video file instead.',
+      process.env.VERCEL
+        ? 'Video link processing is unavailable right now. Please upload the video file instead.'
+        : 'Transcribing YouTube/TikTok/Instagram links needs yt-dlp. Install it with `brew install yt-dlp`, or upload the video file instead.',
     )
   }
   await run(
-    'yt-dlp',
+    ytDlp,
     ['-f', 'bestaudio/best', '--no-playlist', '-o', path.join(workdir, 'input.%(ext)s'), url],
     { maxBuffer: 16 * 1024 * 1024 },
   )
@@ -252,15 +255,12 @@ async function probeDuration(file: string): Promise<number | null> {
   }
 }
 
-// ffmpeg/ffprobe take `-version`; yt-dlp only accepts `--version`.
-const VERSION_FLAG: Record<string, string> = { 'yt-dlp': '--version' }
-
 // Only successes are cached, so installing a tool works without restarting the server.
 const foundBinaries = new Set<string>()
 async function hasBinary(name: string) {
   if (foundBinaries.has(name)) return true
   try {
-    await run(name, [VERSION_FLAG[name] ?? '-version'])
+    await run(name, [path.basename(name) === 'yt-dlp' ? '--version' : '-version'])
     foundBinaries.add(name)
     return true
   } catch {

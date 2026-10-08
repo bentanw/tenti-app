@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "dotenv -e .env.local -- vite dev --port 3000",
-    "build": "vite build",
+    "build": "vite build && node scripts/package-yt-dlp.mjs",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "generate-routes": "tsr generate",
@@ -30,6 +30,7 @@
     "@tanstack/react-router": "1.170.41",
     "@tanstack/react-router-devtools": "1.167.2",
     "@tanstack/react-start": "1.168.60",
+    "@vercel/functions": "^3.9.11",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",

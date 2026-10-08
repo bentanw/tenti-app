@@ -54,7 +54,7 @@ Any OpenAI-compatible `/audio/transcriptions` endpoint works, including a self-h
 
 System tools:
 - **ffmpeg** (`brew install ffmpeg`): strips the video and makes a 16kHz mono mp3, so a 1GB video becomes a few MB. Long recordings are split into 20-minute chunks to stay under the API's 25MB limit. Without ffmpeg, only files under 25MB work.
-- **yt-dlp** (`brew install yt-dlp`): only needed for YouTube / TikTok / Instagram / X links. Direct media links (`.mp4` URLs) and uploads work without it.
+- **yt-dlp** (`brew install yt-dlp`): needed locally for YouTube / TikTok / Instagram / X links. The Vercel build downloads and bundles a pinned Linux executable. Direct media links (`.mp4` URLs) and uploads work without it.
 
 ## Project layout
 
@@ -84,7 +84,7 @@ src/components/ui/            shadcn components
 
 - **Database properties:** a page's property values are stored as JSON (`{ [propertyId]: value }`), so adding a column doesn't need a migration. Select options live on the property. The value stores the option id, so renaming an option doesn't break existing rows.
 - **Page content:** this is BlockNote's JSON document, autosaved 700ms after you stop typing. The editor is client-only (`ClientOnly` + `lazy`).
-- **Transcription:** jobs run in the background inside the Node server process, and the transcript page polls until the job finishes. This is fine for one long-running server. If you deploy to serverless, move it to a queue (Inngest, Trigger.dev, BullMQ).
+- **Transcription:** jobs run in the background inside the Node server process, and the transcript page polls until the job finishes. On Vercel, `waitUntil` keeps a job alive after the response within the function's time limit. Longer jobs need a durable queue (Inngest, Trigger.dev, BullMQ). Vercel does not bundle ffmpeg, so media over 25MB still needs a separate ffmpeg deployment strategy.
 - **Auth and access control:** there are three layers. The `_app` route guard redirects signed-out visitors to `/login`. `authMiddleware` rejects any server-function call without a session. Row-level security in Postgres limits every query to the signed-in user's own rows, even if someone calls Supabase's API directly with the public key. Public by design: `/login`, `/signup`, `/auth/callback`, `/<handle>`, and `/go/*` (click counts go through security-definer functions).
 - **Link profiles:** each user gets one, created on first visit to `/links` with a handle based on their email.
 

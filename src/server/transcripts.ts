@@ -1,4 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
+import { waitUntil } from '@vercel/functions'
 import { z } from 'zod'
 import type { Json } from '#/lib/database.types'
 import type { TranscriptSegment } from '#/lib/types'
@@ -104,9 +105,8 @@ export const startTranscription = createServerFn({ method: 'POST' })
         .single(),
     )
 
-    // Fire-and-forget: fine for a single long-running Node server. Swap for a
-    // queue (e.g. Inngest, BullMQ) if you deploy to serverless.
-    void runTranscription(transcript.id, user.id, source)
+    const job = runTranscription(transcript.id, user.id, source)
+    if (process.env.VERCEL) waitUntil(job)
 
     return { id: transcript.id }
   })
